@@ -1,14 +1,14 @@
-FROM debian:stable-slim
-
-RUN apt-get update && apt-get -uy upgrade
-RUN apt-get -y install ca-certificates wget && update-ca-certificates
-RUN wget https://github.com/knovus/coredns/releases/download/v1.6.9/coredns-386 -O /tmp/coredns
-
-FROM scratch
-
-COPY --from=0 /etc/ssl/certs /etc/ssl/certs
-COPY --from=0 /tmp/coredns /coredns
-#ADD coredns /coredns
+FROM alpine:3.11
+RUN apk --no-cache add ca-certificates tzdata
+RUN set -ex; \
+	apkArch="$(apk --print-arch)"; \
+	case "$apkArch" in \
+		x86_64) arch='amd64' ;; \
+		x86) arch='386' ;; \
+		*) echo >&2 "error: unsupported architecture: $apkArch"; exit 1 ;; \
+	esac; \
+	wget --quiet -O /coredns "https://github.com/knovus/coredns/releases/download/v1.6.9/coredns-$arch"; \
+	chmod +x /coredns
 
 EXPOSE 53 53/udp
 ENTRYPOINT ["/coredns"]
